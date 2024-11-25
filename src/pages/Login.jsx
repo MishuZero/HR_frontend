@@ -21,29 +21,30 @@ function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-
     try {
-      // Send POST request to the login API endpoint
       const response = await axios.post(
         'https://hrmanagementsystem-chi.vercel.app/api/auth/login',
         {
           username: credentials.username,
           password: credentials.password
+        },
+        {
+          withCredentials: true
         }
       )
-
-      // If login is successful, save the token or user info (if needed)
-      // You can use the login function from your AuthContext here, if necessary
-      login(response.data) // assuming 'login' stores user info or token
-
-      // Redirect to the dashboard
-      navigate('/dashboard')
+      
+      // Verify successful login response
+      if (response.data && response.data.token) {
+        login(response.data)
+        navigate('/dashboard')
+      } else {
+        setError('Login failed: Invalid response')
+      }
     } catch (err) {
-      // Handle any errors (e.g., incorrect credentials, network issues)
       setError(err.response?.data?.message || 'Failed to login')
     }
   }
-
+  
   return (
     <Container component="main" maxWidth="xs">
       <Box
