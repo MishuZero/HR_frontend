@@ -1,7 +1,7 @@
-import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
-import axios from 'axios'  // Import axios for making API requests
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import axios from "axios";
 import {
   Container,
   Paper,
@@ -11,51 +11,64 @@ import {
   Box,
   Grid,
   Alert,
-} from '@mui/material'
+} from "@mui/material";
 
 function Login() {
-  const [credentials, setCredentials] = useState({ username: '', password: '' })
-  const [error, setError] = useState('')
-  const navigate = useNavigate()
-  const { login } = useAuth()
+  const [credentials, setCredentials] = useState({
+    username: "",
+    password: "",
+  });
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+  const { login } = useAuth();
+
+  // Create axios instance with modified config
+  const api = axios.create({
+    baseURL: 'https://hrmanagementsystem-chi.vercel.app/api',
+    headers: {
+      'Content-Type': 'application/json',
+    }
+  });
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
+  
     try {
-      const response = await axios.post(
-        'https://hrmanagementsystem-chi.vercel.app/api/auth/login',
-        {
-          username: credentials.username,
-          password: credentials.password
-        },
-        {
-          withCredentials: true
-        }
-      )
+      const response = await api.post('/auth/login', credentials);
+      console.log('Login response:', response.data); // Debug log
       
-      // Verify successful login response
-      if (response.data && response.data.token) {
-        login(response.data)
-        navigate('/dashboard')
+      if (response.data?.token && response.data?.user) {
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        
+        await login(response.data);
       } else {
-        setError('Login failed: Invalid response')
+        setError("Invalid login response structure");
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to login')
+      console.error('Detailed login error:', err.response || err);
+      
+      const errorMessage = 
+        err.response?.data?.message || 
+        err.message || 
+        "Login failed. Please try again.";
+      
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
-  }
-  
+  };
   return (
     <Container component="main" maxWidth="xs">
-      <Box
-        sx={{
-          marginTop: 8,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-        }}
-      >
-        <Paper elevation={3} sx={{ padding: 4, width: '100%' }}>
+      <Box sx={{
+        marginTop: 8,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+      }}>
+        <Paper elevation={3} sx={{ padding: 4, width: "100%" }}>
           <Typography component="h1" variant="h5" align="center">
             HR Management System
           </Typography>
@@ -74,6 +87,8 @@ function Login() {
               fullWidth
               label="Username"
               name="username"
+              autoComplete="username"
+              autoFocus
               value={credentials.username}
               onChange={(e) =>
                 setCredentials({ ...credentials, username: e.target.value })
@@ -86,6 +101,7 @@ function Login() {
               label="Password"
               type="password"
               name="password"
+              autoComplete="current-password"
               value={credentials.password}
               onChange={(e) =>
                 setCredentials({ ...credentials, password: e.target.value })
@@ -104,8 +120,8 @@ function Login() {
                 <Link
                   to="/register"
                   style={{
-                    textDecoration: 'none',
-                    color: '#1976d2',
+                    textDecoration: "none",
+                    color: "#1976d2",
                   }}
                 >
                   <Typography variant="body2">
@@ -118,7 +134,7 @@ function Login() {
         </Paper>
       </Box>
     </Container>
-  )
+  );
 }
 
-export default Login
+export default Login;

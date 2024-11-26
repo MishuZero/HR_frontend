@@ -1,17 +1,26 @@
-// frontend/src/contexts/AuthContext.jsx
 import { createContext, useState, useContext, useEffect } from 'react'
 import { authService } from '../services/api'
+import { useNavigate } from 'react-router-dom'
 
 const AuthContext = createContext(null)
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
+  const navigate = useNavigate()
 
   useEffect(() => {
+    const token = localStorage.getItem('token')
     const storedUser = localStorage.getItem('user')
-    if (storedUser) {
-      setUser(JSON.parse(storedUser))
+    
+    if (token && storedUser) {
+      try {
+        setUser(JSON.parse(storedUser))
+      } catch (error) {
+        // Clear invalid stored data
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+      }
     }
     setLoading(false)
   }, [])
@@ -19,9 +28,22 @@ export const AuthProvider = ({ children }) => {
   const login = async (credentials) => {
     try {
       const data = await authService.login(credentials)
+      
+      // Store token and user data
+      localStorage.setItem('token', data.token)
+      localStorage.setItem('user', JSON.stringify(data.user))
+      
+      // Update user state
       setUser(data.user)
+      
+      // Navigate to dashboard
+      navigate('/dashboard')
+      
       return data
     } catch (error) {
+      // Clear any existing token/user data on login failure
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
       throw error
     }
   }
@@ -36,8 +58,15 @@ export const AuthProvider = ({ children }) => {
   }
 
   const logout = () => {
-    authService.logout()
+    // Clear local storage
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    
+    // Clear user state
     setUser(null)
+    
+    // Navigate to login
+    navigate('/')
   }
 
   const value = {
@@ -48,7 +77,11 @@ export const AuthProvider = ({ children }) => {
     loading,
   }
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  )
 }
 
 export const useAuth = () => {

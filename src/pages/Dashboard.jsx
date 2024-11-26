@@ -1,4 +1,4 @@
-// src/pages/Dashboard.jsx
+import React, { useState } from 'react'
 import { Routes, Route, useNavigate } from 'react-router-dom'
 import {
   Box,
@@ -21,16 +21,21 @@ import {
   Settings,
   Logout as LogoutIcon,
 } from '@mui/icons-material'
+
+// Import components
 import Overview from './Overview'
 import Employees from './Employees'
 import Departments from './Departments'
 import Reports from './Reports'
-// import Settings from './Settings'
+import SettingsPage from './Settings' 
+import { useAuth } from '../contexts/AuthContext'
 
 const drawerWidth = 240
 
 function Dashboard() {
   const navigate = useNavigate()
+  const { logout } = useAuth()
+  const [activeMenu, setActiveMenu] = useState('')
 
   const menuItems = [
     { text: 'Overview', icon: <DashboardIcon />, path: '' },
@@ -40,19 +45,30 @@ function Dashboard() {
     { text: 'Settings', icon: <Settings />, path: 'settings' },
   ]
 
+  const handleMenuClick = (path, text) => {
+    setActiveMenu(text)
+    navigate(path)
+  }
+
+  const handleLogout = () => {
+    logout()
+    navigate('/')
+  }
+
   return (
     <Box sx={{ display: 'flex' }}>
       <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
         <Toolbar>
           <Typography variant="h6" noWrap component="div">
-            HR Management
+            HR Management System
           </Typography>
           <Box sx={{ flexGrow: 1 }} />
-          <IconButton color="inherit" onClick={() => navigate('/')}>
+          <IconButton color="inherit" onClick={handleLogout}>
             <LogoutIcon />
           </IconButton>
         </Toolbar>
       </AppBar>
+      
       <Drawer
         variant="permanent"
         sx={{
@@ -71,7 +87,8 @@ function Dashboard() {
               <ListItem
                 button
                 key={item.text}
-                onClick={() => navigate(item.path)}
+                selected={activeMenu === item.text}
+                onClick={() => handleMenuClick(item.path, item.text)}
               >
                 <ListItemIcon>{item.icon}</ListItemIcon>
                 <ListItemText primary={item.text} />
@@ -81,6 +98,7 @@ function Dashboard() {
           <Divider />
         </Box>
       </Drawer>
+      
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
         <Toolbar />
         <Routes>
@@ -88,7 +106,7 @@ function Dashboard() {
           <Route path="employees" element={<Employees />} />
           <Route path="departments" element={<Departments />} />
           <Route path="reports" element={<Reports />} />
-          <Route path="settings" element={<Settings />} />
+          <Route path="settings" element={<SettingsPage />} />
         </Routes>
       </Box>
     </Box>
